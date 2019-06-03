@@ -1,0 +1,6 @@
+.vscode/ipch
+
+*.exe
+*.obj
+*.pdb
+*.ilk

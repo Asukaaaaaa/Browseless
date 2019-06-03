@@ -1,0 +1,34 @@
+{
+    // 有关 tasks.json 格式的文档，请参见
+    // https://go.microsoft.com/fwlink/?LinkId=733558
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "cl build",
+            "command": "cl",
+            "args": [
+                "//EHsc",
+                "//Zi",
+                "test.cpp", "src/window/window.cpp", "src/render/render.cpp",
+                "//I", "lib",
+                "//I", "lib/glew-2.1.0/include/",
+                "//I", "lib/freetype-2.10.0/include/",
+                "//link",
+                "/libpath:lib/glew-2.1.0/lib/Release/x64/",
+                "/libpath:lib/freetype-2.10.0/win64/",
+                "user32.lib", "gdi32.lib", "opengl32.lib", "glew32.lib", "freetype.lib"
+            ],
+            "options": {
+                //
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
