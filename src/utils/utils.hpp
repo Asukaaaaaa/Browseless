@@ -1,3 +1,5 @@
+#pragma once
+
 enum RectState {
     Left_Bottom,
     Left_Top

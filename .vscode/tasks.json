@@ -10,10 +10,12 @@
             "args": [
                 "//EHsc",
                 "//Zi",
-                "test.cpp", "src/window/window.cpp", "src/render/render.cpp",
+                "test.cpp", "src/main.cpp", "src/window/window.cpp", "src/render/render.cpp", "src/dom/dom.cpp",
+                "lib/pugixml-1.9/src/pugixml.cpp",
                 "//I", "lib",
                 "//I", "lib/glew-2.1.0/include/",
                 "//I", "lib/freetype-2.10.0/include/",
+                "//I", "lib/pugixml-1.9/src/",
                 "//link",
                 "/libpath:lib/glew-2.1.0/lib/Release/x64/",
                 "/libpath:lib/freetype-2.10.0/win64/",

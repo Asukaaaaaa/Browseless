@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+#include "../defs.hpp"
+
 /*
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     Window window;
@@ -55,8 +57,6 @@ struct _GL_ST {
         }
         DescribePixelFormat(window->hDC, pf, sizeof(PIXELFORMATDESCRIPTOR), &pfd);
 
-        //ReleaseDC(window->hwnd, hDC);
-        //window->hDC = GetDC(window->hwnd);
         hRC = wglCreateContext(window->hDC);
         wglMakeCurrent(window->hDC, hRC);
 
@@ -71,6 +71,18 @@ struct _GL_ST {
         wglDeleteContext(hRC);
     }
 } GL_ST;
+
+/*************************************************************************/
+
+Window::Window() {
+    //
+}
+
+Window::~Window() {
+    GL_ST.release();
+    ReleaseDC(this->hwnd, this->hDC);
+    DestroyWindow(hwnd);
+}
 
 bool Window::init(HINSTANCE hInstance) {
     this->hInst = hInstance;
@@ -93,13 +105,20 @@ bool Window::init(HINSTANCE hInstance) {
         nullptr,          // class menu used
         this->hInst,      // instance handle
         NULL);
+    
+    this->setStyle();
+
     this->hDC = GetDC(hwnd);
 
     return GL_ST.glInit(this);
 }
 
+void Window::setStyle() {
+    // todo
+}
+
 LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    Window *_this = WindowManager.currentWindow;
+    Window *_this = WindowManager.currentWindow->first;
     switch (uMsg) {
     case WM_DESTROY:
         PostQuitMessage(0);
@@ -108,7 +127,6 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
         _this->width = LOWORD(lParam);
         _this->height = HIWORD(lParam);
         glViewport(0, 0, _this->width, _this->height);
-        PostMessage(hwnd, WM_PAINT, 0, 0);
         return 0;
     case WM_PAINT:
         static PAINTSTRUCT ps;
@@ -120,16 +138,4 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
         break;
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
-}
-
-void Window::setDefaultStyle(HWND hwnd) {
-    DWORD dwStyle = GetWindowLong(hwnd, GWL_STYLE); //获取旧样式
-    DWORD dwNewStyle = WS_OVERLAPPED | WS_VISIBLE | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
-    dwNewStyle &= dwStyle;                      //按位与将旧样式加上
-    SetWindowLong(hwnd, GWL_STYLE, dwNewStyle); //设置成新的样式
-
-    DWORD dwExStyle = GetWindowLong(hwnd, GWL_EXSTYLE); //获取旧扩展样式
-    DWORD dwNewExStyle = WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR;
-    dwNewExStyle &= dwExStyle;                      //按位与将旧扩展样式加上
-    SetWindowLong(hwnd, GWL_EXSTYLE, dwNewExStyle); //设置新的扩展样式
 }

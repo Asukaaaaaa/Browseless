@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Windows.h>
 
 #include <functional>
@@ -30,18 +32,13 @@ public:
     int width = 800;
     int height = 600;
 
-    Window() {
-    }
-
-    ~Window() {
-        ReleaseDC(this->hwnd, this->hDC);
-        DestroyWindow(hwnd);
-    }
+    Window();
+    ~Window();
 
     bool init(HINSTANCE);
     std::function<void()> rende = []() {};
 
-    static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+    void setStyle();
 
-    static void setDefaultStyle(HWND hwnd);
+    static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 };

@@ -1,5 +1,8 @@
 #include "render.hpp"
+
 #include "../window/window.hpp"
+
+#include "../defs.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -72,8 +75,8 @@ bool Render::init() {
     // 纹理对齐
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    // glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    // glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
 
     return true;
 }
@@ -130,12 +133,14 @@ void Render::typeText(const char *str, std::vector<std::string> &lines, int size
             w = rect.w;
             str--;
         } else {
-            line += *str;
+            *line += *str;
             maxh = maxh < ch.Bearing[1] ? ch.Bearing[1] : maxh;
             maxl = maxl < ch.Size[1] - ch.Bearing[1] ? ch.Size[1] - ch.Bearing[1] : maxl;
         }
         str++;
     }
+    lines.push_back(*line);
+    w = rect.w;
     h = lines.size() * (maxh + maxl) * 1.1;
     rect.setLeftTop(rect.x, rect.y, w, h);
 }
@@ -155,26 +160,26 @@ void Render::drawText(const char *str, int size, float x, float y) {
 }
 
 void Render::drawRect(Shader &shader, Rect &rect, GLuint texId) {
-    auto window = WindowManager.currentWindow;
+    auto window = WindowManager.currentWindow->first;
     if (texId) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texId);
         glUniform1i(glGetUniformLocation(shader.id, "tex"), 0); // 手动设置
         float vertices[6][4] = {
-            {rect.points[0][0] / window->width, rect.points[0][1] / window->height, 0.0f, 0.0f},
-            {rect.points[1][0] / window->width, rect.points[1][1] / window->height, 1.0f, 1.0f},
-            {rect.points[2][0] / window->width, rect.points[2][1] / window->height, 0.0f, 1.0f},
-            {rect.points[3][0] / window->width, rect.points[3][1] / window->height, 1.0f, 0.0f},
+            {rect.points[0][0] * 2 / window->width - 1, rect.points[0][1] * 2 / window->height + 1, 0.0f, 0.0f},
+            {rect.points[1][0] * 2 / window->width - 1, rect.points[1][1] * 2 / window->height + 1, 1.0f, 1.0f},
+            {rect.points[2][0] * 2 / window->width - 1, rect.points[2][1] * 2 / window->height + 1, 0.0f, 1.0f},
+            {rect.points[3][0] * 2 / window->width - 1, rect.points[3][1] * 2 / window->height + 1, 1.0f, 0.0f},
         };
         glBindBuffer(GL_ARRAY_BUFFER, texVBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
         glBindVertexArray(texVAO);
     } else {
         float vertices[6][2] = {
-            {rect.points[0][0] / window->width, rect.points[0][1] / window->height},
-            {rect.points[1][0] / window->width, rect.points[1][1] / window->height},
-            {rect.points[2][0] / window->width, rect.points[2][1] / window->height},
-            {rect.points[3][0] / window->width, rect.points[3][1] / window->height},
+            {rect.points[0][0] * 2 / window->width - 1, rect.points[0][1] * 2 / window->height - 1},
+            {rect.points[1][0] * 2 / window->width - 1, rect.points[1][1] * 2 / window->height - 1},
+            {rect.points[2][0] * 2 / window->width - 1, rect.points[2][1] * 2 / window->height - 1},
+            {rect.points[3][0] * 2 / window->width - 1, rect.points[3][1] * 2 / window->height - 1},
         };
         glBindBuffer(GL_ARRAY_BUFFER, priVBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), &vertices);

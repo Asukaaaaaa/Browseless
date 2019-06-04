@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string>
 #include <vector>
 
@@ -25,6 +27,7 @@ public:
 
     int appendChild(Node *node) {
         if (node) {
+            node->father = this;
             this->childs.push_back(node);
             return this->childs.size();
         } else
@@ -32,10 +35,12 @@ public:
     };
 
     virtual void computeSelf() {
-        auto &r = this->father->contentRect;
-        auto &p = r.points[2];
-        this->contentRect.setLeftTop(p[0], p[1], r.w, 0);
-        this->rect.setLeftTop(p[0], p[1], r.w, 0);
+        if (this->father) {
+            auto &r = this->father->rect;
+            auto &p = r.points[2];
+            this->contentRect.setLeftTop(p[0], p[1], r.w, 0);
+            this->rect.setLeftTop(p[0], p[1], r.w, 0);
+        }
     }
 
     virtual Rect *compute() {
@@ -43,8 +48,8 @@ public:
         for (auto child : this->childs) {
             auto rect = child->compute();
             this->rect.h += rect->h;
+            this->rect.resetLeftTop();
         }
-        this->rect.resetLeftTop();
         return &this->rect;
     };
 
@@ -66,8 +71,8 @@ public:
     std::vector<std::string> lines;
     int size;
 
-    TextNode(const char *str, int size) : str(str), size(size) {
-        //
+    TextNode(const char *str, int size = 48) : str(str) {
+        this->size = size;
     }
 
     ~TextNode() {
@@ -97,17 +102,19 @@ public:
     Node root;
 
     Dom() {
-        this->root.rect.setLeftTop(0, 0, 800, 600);
-        //
+        this->root.rect.setLeftTop(0, 0, 800, 0);
+        this->root.contentRect.setLeftTop(0, 0, 800, 0);
     }
 
     ~Dom() {
         //
     }
 
-    void init();
+    void load(const std::string &);
+
+    void release();
 
     void draw() {
-        //
+        this->root.draw();
     }
 };

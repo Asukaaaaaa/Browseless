@@ -1,24 +1,27 @@
+#pragma once
+
+#include "dom/dom.hpp"
 #include "render/render.hpp"
 #include "window/window.hpp"
 
-/*
-#define DEFAULT_WIDTH 800
-#define DEFAULT_HEIGHT 600
-
-#define FT_DEFAULT_HEIGHT 48
-*/
-
 struct _MANAGER {
-    Window *currentWindow;
-    std::vector<Window *> windows;
-    Window *create() {
-        auto window = new Window();
+    std::pair<Window *, Dom *> *currentWindow;
+    std::vector<std::pair<Window *, Dom *> *> windows;
+    std::pair<Window *, Dom *> *create() {
+        auto window = new std::pair<Window *, Dom *>(new Window(), new Dom());
+        window->first->rende = [window]() {
+            window->second->draw();
+        };
         if (!windows.size())
             currentWindow = window;
         windows.push_back(window);
         return windows.back();
     }
     // todo
-} WindowManager;
+};
 
-Render MainRender;
+extern struct _MANAGER WindowManager;
+
+extern Render MainRender;
+
+// todo window render dom control
