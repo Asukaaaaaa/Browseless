@@ -67,7 +67,7 @@ public:
 
 class TextNode : public Node {
 public:
-    const char *str;
+    const char *str = nullptr;
     std::vector<std::string> lines;
     int size;
 
@@ -85,8 +85,13 @@ public:
 
 class ImgNode : public Node {
 public:
-    ImgNode() {
-        //
+    std::string path;
+    int width;
+    int height;
+
+    ImgNode(const char *str, float w = 0, float h = 0) : path(str) {
+        this->width = w;
+        this->height = h;
     }
 
     ~ImgNode() {
@@ -110,7 +115,7 @@ public:
         //
     }
 
-    void load(const std::string &);
+    void load(std::string);
 
     void release();
 

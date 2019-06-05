@@ -13,8 +13,8 @@
 void TextNode::computeSelf() {
     this->Node::computeSelf();
     MainRender.typeText(this->str, this->lines, this->size, this->contentRect);
-    auto r = this->contentRect;
-    this->rect.setLeftTop(r.x, r.y, r.w, r.h);
+    this->rect.h = this->contentRect.h;
+    this->rect.resetLeftTop();
 }
 
 void TextNode::drawSelf() {
@@ -28,11 +28,14 @@ void TextNode::drawSelf() {
 // ImgNode
 
 void ImgNode::computeSelf() {
-    //
+    this->Node::computeSelf();
+    MainRender.typeImage(this->path, this->width, this->height, this->contentRect);
+    this->rect.h = this->contentRect.h;
+    this->rect.resetLeftTop();
 }
 
 void ImgNode::drawSelf() {
-    //
+    MainRender.drawImage(this->path, this->contentRect);
 }
 
 // Dom
@@ -46,7 +49,7 @@ void childGen(pugi::xml_node &xnode, Node *node) {
         } else if (tag == "p") {
             child = new TextNode(xchild.child_value());
         } else if (tag == "img") {
-            child = new ImgNode();
+            child = new ImgNode(xchild.attribute("src").value(), xchild.attribute("width").as_float(), xchild.attribute("height").as_float());
         } else {
             return;
         }
@@ -55,7 +58,7 @@ void childGen(pugi::xml_node &xnode, Node *node) {
     }
 }
 
-void Dom::load(const std::string &path) {
+void Dom::load(std::string path) {
     pugi::xml_document doc;
     if (doc.load_file(path.c_str())) {
         pugi::xml_node root = doc.child("root");

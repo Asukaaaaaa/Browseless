@@ -1,13 +1,13 @@
 #include "render.hpp"
 
-#include "../window/window.hpp"
-
 #include "../defs.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 #include <iostream>
+#include <map>
+#include <string>
 
 // init shader
 Shader *priShader;
@@ -80,6 +80,8 @@ bool Render::init() {
 
     return true;
 }
+
+/*******************************************************/
 
 void checkCh(Render *pthis, char c) {
     if (!pthis->Characters.count(c)) {
@@ -159,6 +161,70 @@ void Render::drawText(const char *str, int size, float x, float y) {
     }
 }
 
+/*********************************************************/
+
+struct _PIC_INFO {
+    u_int tex;
+    int width;
+    int height;
+} typedef PIC_INFO;
+
+std::map<std::string, PIC_INFO> pic_buffer;
+
+void checkImg(std::string &imgPath) {
+    if (!pic_buffer.count(imgPath)) {
+        unsigned int texture;
+        glGenTextures(1, &texture);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        // 为当前绑定的纹理对象设置环绕、过滤方式
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // 加载并生成纹理
+        int width, height, nrChannels;
+        unsigned char *data = stbi_load(imgPath.c_str(), &width, &height, &nrChannels, 0);
+        if (data) {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+        } else {
+            std::cout << "Failed to load texture" << std::endl;
+        }
+        stbi_image_free(data);
+        pic_buffer.insert(std::pair<std::string, PIC_INFO>(imgPath, {texture, width, height}));
+    }
+}
+
+void Render::typeImage(std::string &imgPath, float width, float height, Rect &rect) {
+    checkImg(imgPath);
+    auto info = pic_buffer[imgPath];
+    if (width && height) {
+        rect.w = width;
+        rect.h = height;
+    } else if (!width && !height) {
+        rect.w = info.width;
+        rect.h = info.height;
+    } else {
+        if (width) {
+            rect.w = width;
+            rect.h = width / info.width * info.height;
+        } else if (height) {
+            rect.h = height;
+            rect.w = height / info.height * info.width;
+        }
+    }
+    rect.resetLeftTop();
+}
+
+void Render::drawImage(std::string &imgPath, Rect &rect) {
+    checkImg(imgPath);
+    auto info = pic_buffer[imgPath];
+    this->drawRect(*priShader, rect, info.tex);
+}
+
+/*********************************************************/
+
 void Render::drawRect(Shader &shader, Rect &rect, GLuint texId) {
     auto window = WindowManager.currentWindow->first;
     if (texId) {
@@ -191,28 +257,4 @@ void Render::drawRect(Shader &shader, Rect &rect, GLuint texId) {
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glFlush();
-}
-
-void Render::drawImage(const char *imgPath, float scale) {
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    // 为当前绑定的纹理对象设置环绕、过滤方式
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // 加载并生成纹理
-    int width, height, nrChannels;
-    unsigned char *data = stbi_load(imgPath, &width, &height, &nrChannels, 0);
-    if (data) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    } else {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-    stbi_image_free(data);
-
-    this->drawRect(*priShader, *(new Rect(0, 0, width * scale, height * scale)), texture);
 }

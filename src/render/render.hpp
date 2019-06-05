@@ -108,7 +108,8 @@ public:
     void typeText(const char *, std::vector<std::string> &, int, Rect &);
     void drawText(const char *, int, float, float);
 
-    void drawImage(const char *, float);
+    void typeImage(std::string &, float, float, Rect &);
+    void drawImage(std::string &, Rect &);
 
     void drawRect(Shader &, Rect &, GLuint);
 

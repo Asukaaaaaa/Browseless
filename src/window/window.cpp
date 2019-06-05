@@ -1,11 +1,11 @@
 #include "window.hpp"
 
+#include "../defs.hpp"
+
 // #define GLEW_STATIC
 #include <GL/glew.h>
 
 #include <iostream>
-
-#include "../defs.hpp"
 
 /*
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
@@ -105,7 +105,7 @@ bool Window::init(HINSTANCE hInstance) {
         nullptr,          // class menu used
         this->hInst,      // instance handle
         NULL);
-    
+
     this->setStyle();
 
     this->hDC = GetDC(hwnd);
