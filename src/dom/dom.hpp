@@ -13,12 +13,12 @@ public:
     std::vector<Node *> childs;
 
     Node() {
-        this->rect.setLeftTop(0, 0, 0, 0);
+        //
     }
 
     Node(Node *node) {
         this->father = node;
-        this->rect.setLeftTop(node->contentRect.points[2][0], node->contentRect.points[2][1], node->contentRect.w, 0);
+        this->rect.set(node->contentRect.points[2][0], node->contentRect.points[2][1], node->contentRect.w, 0);
     }
 
     ~Node() {
@@ -38,8 +38,8 @@ public:
         if (this->father) {
             auto &r = this->father->rect;
             auto &p = r.points[2];
-            this->contentRect.setLeftTop(p[0], p[1], r.w, 0);
-            this->rect.setLeftTop(p[0], p[1], r.w, 0);
+            this->contentRect.set(p[0], p[1], r.w, 0);
+            this->rect.set(p[0], p[1], r.w, 0);
         }
     }
 
@@ -48,7 +48,7 @@ public:
         for (auto child : this->childs) {
             auto rect = child->compute();
             this->rect.h += rect->h;
-            this->rect.resetLeftTop();
+            this->rect.reset();
         }
         return &this->rect;
     };
@@ -107,8 +107,8 @@ public:
     Node root;
 
     Dom() {
-        this->root.rect.setLeftTop(0, 0, 800, 0);
-        this->root.contentRect.setLeftTop(0, 0, 800, 0);
+        this->root.rect.set(0, 0, 800, 0);
+        this->root.contentRect.set(0, 0, 800, 0);
     }
 
     ~Dom() {

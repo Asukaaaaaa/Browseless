@@ -83,14 +83,22 @@ bool Render::init() {
 
 /*******************************************************/
 
-void checkCh(Render *pthis, char c) {
-    if (!pthis->Characters.count(c)) {
-        if (FT_Load_Char(pthis->face, c, FT_LOAD_RENDER)) {
+struct _Character {
+    GLuint TextureID; // 字形纹理的ID
+    GLuint Size[2];   // 字形大小
+    int Bearing[2];   // 从基准线到字形左部/顶部的偏移值
+    long Advance;     // 原点距下一个字形原点的距离
+} typedef Character;
+
+std::map<char, Character> Characters;
+
+void checkCh(FT_Face &face, char c) {
+    if (!Characters.count(c)) {
+        if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
             // todo
             std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
             return;
         }
-
         // 生成纹理
         unsigned int texture;
         glGenTextures(1, &texture);
@@ -100,12 +108,12 @@ void checkCh(Render *pthis, char c) {
             GL_TEXTURE_2D,
             0,
             GL_RED,
-            pthis->face->glyph->bitmap.width,
-            pthis->face->glyph->bitmap.rows,
+            face->glyph->bitmap.width,
+            face->glyph->bitmap.rows,
             0,
             GL_RED,
             GL_UNSIGNED_BYTE,
-            pthis->face->glyph->bitmap.buffer);
+            face->glyph->bitmap.buffer);
         // 设置纹理选项
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -114,10 +122,10 @@ void checkCh(Render *pthis, char c) {
         // 储存字符供之后使用
         Character character = {
             texture,
-            {pthis->face->glyph->bitmap.width, pthis->face->glyph->bitmap.rows},
-            {pthis->face->glyph->bitmap_left, pthis->face->glyph->bitmap_top},
-            pthis->face->glyph->advance.x};
-        pthis->Characters.insert(std::pair<char, Character>(c, character));
+            {face->glyph->bitmap.width, face->glyph->bitmap.rows},
+            {face->glyph->bitmap_left, face->glyph->bitmap_top},
+            face->glyph->advance.x};
+        Characters.insert(std::pair<char, Character>(c, character));
     }
 }
 
@@ -126,8 +134,8 @@ void Render::typeText(const char *str, std::vector<std::string> &lines, int size
     float maxh = 0, maxl = 0;
     auto line = new std::string();
     while (*str != '\0') {
-        checkCh(this, *str);
-        auto &ch = this->Characters[*str];
+        checkCh(this->face, *str);
+        auto &ch = Characters[*str];
         w -= (ch.Advance >> 6) * size / 48;
         if (w < 0) {
             lines.push_back(*line);
@@ -143,17 +151,17 @@ void Render::typeText(const char *str, std::vector<std::string> &lines, int size
     }
     lines.push_back(*line);
     w = rect.w;
-    h = lines.size() * (maxh + maxl) * 1.1;
-    rect.setLeftTop(rect.x, rect.y, w, h);
+    rect.h = lines.size() * (maxh + maxl) * 1.1;
+    rect.reset();
 }
 
 void Render::drawText(const char *str, int size, float x, float y) {
     Rect rect;
     float scale = size / 48;
     while (*str != '\0') {
-        checkCh(this, *str);
-        auto &ch = this->Characters[*str];
-        rect.set(x + ch.Bearing[0] * scale, y - (ch.Size[1] - ch.Bearing[1]) * scale,
+        checkCh(this->face, *str);
+        auto &ch = Characters[*str];
+        rect.set(x + ch.Bearing[0] * scale, y - ch.Bearing[1] * scale,
                  ch.Size[0] * scale, ch.Size[1] * scale);
         this->drawRect(*fontShader, rect, ch.TextureID);
         x += (ch.Advance >> 6) * scale;
@@ -214,7 +222,7 @@ void Render::typeImage(std::string &imgPath, float width, float height, Rect &re
             rect.w = height / info.height * info.width;
         }
     }
-    rect.resetLeftTop();
+    rect.reset();
 }
 
 void Render::drawImage(std::string &imgPath, Rect &rect) {
@@ -227,30 +235,32 @@ void Render::drawImage(std::string &imgPath, Rect &rect) {
 
 void Render::drawRect(Shader &shader, Rect &rect, GLuint texId) {
     auto window = WindowManager.currentWindow->first;
+    rect.trans(window->width, window->height);
     if (texId) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texId);
         glUniform1i(glGetUniformLocation(shader.id, "tex"), 0); // 手动设置
         float vertices[6][4] = {
-            {rect.points[0][0] * 2 / window->width - 1, rect.points[0][1] * 2 / window->height + 1, 0.0f, 0.0f},
-            {rect.points[1][0] * 2 / window->width - 1, rect.points[1][1] * 2 / window->height + 1, 1.0f, 1.0f},
-            {rect.points[2][0] * 2 / window->width - 1, rect.points[2][1] * 2 / window->height + 1, 0.0f, 1.0f},
-            {rect.points[3][0] * 2 / window->width - 1, rect.points[3][1] * 2 / window->height + 1, 1.0f, 0.0f},
+            {rect.points[0][0], rect.points[0][1], 0.0f, 0.0f},
+            {rect.points[1][0], rect.points[1][1], 1.0f, 1.0f},
+            {rect.points[2][0], rect.points[2][1], 0.0f, 1.0f},
+            {rect.points[3][0], rect.points[3][1], 1.0f, 0.0f},
         };
         glBindBuffer(GL_ARRAY_BUFFER, texVBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
         glBindVertexArray(texVAO);
     } else {
         float vertices[6][2] = {
-            {rect.points[0][0] * 2 / window->width - 1, rect.points[0][1] * 2 / window->height - 1},
-            {rect.points[1][0] * 2 / window->width - 1, rect.points[1][1] * 2 / window->height - 1},
-            {rect.points[2][0] * 2 / window->width - 1, rect.points[2][1] * 2 / window->height - 1},
-            {rect.points[3][0] * 2 / window->width - 1, rect.points[3][1] * 2 / window->height - 1},
+            {rect.points[0][0], rect.points[0][1]},
+            {rect.points[1][0], rect.points[1][1]},
+            {rect.points[2][0], rect.points[2][1]},
+            {rect.points[3][0], rect.points[3][1]},
         };
         glBindBuffer(GL_ARRAY_BUFFER, priVBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), &vertices);
         glBindVertexArray(priVAO);
     }
+    rect.reset(); // todo
     shader.use();
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);

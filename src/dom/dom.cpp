@@ -14,14 +14,14 @@ void TextNode::computeSelf() {
     this->Node::computeSelf();
     MainRender.typeText(this->str, this->lines, this->size, this->contentRect);
     this->rect.h = this->contentRect.h;
-    this->rect.resetLeftTop();
+    this->rect.reset();
 }
 
 void TextNode::drawSelf() {
     int n = this->lines.size();
     for (int i = 0; i < n; ++i) {
         auto line = this->lines[i];
-        MainRender.drawText(line.c_str(), this->size, this->rect.points[2][0], this->rect.points[2][1] + this->rect.h * (n - i - 1) / n);
+        MainRender.drawText(line.c_str(), this->size, this->rect.points[0][0], this->rect.points[0][1] + this->rect.h * (i + 1) / n);
     }
 }
 
@@ -31,7 +31,7 @@ void ImgNode::computeSelf() {
     this->Node::computeSelf();
     MainRender.typeImage(this->path, this->width, this->height, this->contentRect);
     this->rect.h = this->contentRect.h;
-    this->rect.resetLeftTop();
+    this->rect.reset();
 }
 
 void ImgNode::drawSelf() {

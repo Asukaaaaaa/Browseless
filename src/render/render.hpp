@@ -14,12 +14,6 @@
 
 #include "../utils/utils.hpp"
 
-struct Character {
-    GLuint TextureID; // 字形纹理的ID
-    GLuint Size[2];   // 字形大小
-    int Bearing[2];   // 从基准线到字形左部/顶部的偏移值
-    long Advance;     // 原点距下一个字形原点的距离
-};
 
 class Shader {
 public:
@@ -85,8 +79,7 @@ class Render {
 public:
     FT_Library ft = nullptr;
     FT_Face face = nullptr;
-    std::map<char, Character> Characters;
-
+    
     Render() {
         // font 初始化
         if (FT_Init_FreeType(&this->ft))
